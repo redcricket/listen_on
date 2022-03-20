@@ -1,0 +1,47 @@
+---
+# YAML documents begin with the document separator ---
+
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+
+  # Hosts: where our play will run and options it will run with
+  hosts: all
+
+  # Tasks: the list of tasks that will be executed within the play, this section
+  # can also be used for pre and post tasks
+  tasks:
+    - name: Test listen_on module port 50030
+      listen_on:
+        listen_on_timeout: 30
+        listen_on_port: 50030
+      delegate_to: centos3
+      run_once: True
+
+    - name: Test listen_on module port 40040
+      listen_on:
+        listen_on_timeout: 30
+        listen_on_port: 40040
+      delegate_to: centos3
+      run_once: True
+
+
+    - name: check port 50030
+      wait_for:
+        host: "{{ item }}"
+        port: 50030
+        timeout: 10
+      ignore_errors: True
+      loop: "{{ groups['centos'] }}"
+
+    - name: Terminate listener
+      shell: |
+          echo "terminate" | nc {{ item }} 50030
+      loop: "{{ groups['centos'] }}"
+      ignore_errors: True
+      delegate_to: localhost
+      run_once: True
+
+    - name: All done
+      local_action: debug msg="All done"
+      run_once: True
