@@ -49,24 +49,15 @@ class ListenOnPort:
                         if s is server_socket:
                             client_socket, address = server_socket.accept()
                             read_list.append(client_socket)
-                            self.logger.info('line 50') 
-                            self.logger.info("Connection from address ????.")
-                            self.logger.info(address)
-                            self.logger.info('line 53') 
                         else:
                             try:
                                 data = s.recv(1024)
-                                self.logger.info('line 57') 
-                                self.logger.info("Got data = %s" % data)
-                                self.logger.info('line 59') 
                                 if 'terminate' in data.decode('utf-8'):
                                     self.logger.info("terminating.")
                                     running = False
                             except Exception as ex:
-                                self.logger.info('line 64') 
                                 self.logger.info('error s.recv() ex=%s.' % ex)
                             finally:
-                                self.logger.info('line 67') 
                                 self.logger.info("closing socket.")
                                 s.close()
                                 read_list.remove(s)
@@ -87,14 +78,12 @@ def listen_on_port(port):
     logger.addHandler(fh)
     keep_fds = [fh.stream.fileno()]
 
-    logger.info("doing port %s" % port)
     # print('{"changed": true, "msg": "listening on port %s."}' % port, flush=True)
     print('{"changed": true, "msg": "listening on port %s."}' % port)
     sys.stdout.flush()
     l = ListenOnPort(port=port, logger=logger)
     d = Daemonize(app="demon_%s" % port, pid=l.pid, keep_fds=keep_fds, action=l.listen_on_port)
     d.start()
-    logger.info("after call to Daemonize() %s" % port)
 
 
 
