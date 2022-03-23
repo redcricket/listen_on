@@ -1,5 +1,7 @@
 # listen_on
 
+This module will listen on a specified port on a specified remote system to allow for firewall and security group testings.
+
 ## Testing so far
 
 on the Dive Into Ansible lab we have:
