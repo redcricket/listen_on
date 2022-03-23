@@ -14,7 +14,7 @@
     - name: Terminate listener
       shell: |
           echo "terminate" | nc {{ item.0 }} {{ item.1 }}
-      loop: "{{ groups['ubuntu'] | product([50030, 40040]) | list }}"
+      loop: "{{ groups['centos'] | product([50030, 40040]) | list }}"
       ignore_errors: True
       delegate_to: localhost
       run_once: True
@@ -23,32 +23,29 @@
       listen_on:
         listen_on_timeout: 30
         listen_on_port: 50030
-      delegate_to: "{{ item }}"
+      delegate_to: centos3
       run_once: True
-      loop: "{{ groups['ubuntu'] }}"
 
     - name: Test listen_on module port 40040
       listen_on:
         listen_on_timeout: 30
         listen_on_port: 40040
-      delegate_to: "{{ item }}"
+      delegate_to: centos3
       run_once: True
-      loop: "{{ groups['ubuntu'] }}"
 
 
-    - name: check port 50030 and 40040
+    - name: check port 50030
       wait_for:
-        host: "{{ item.0 }}"
-        port: "{{ item.1 }}"
+        host: "{{ item }}"
+        port: 50030
         timeout: 10
       ignore_errors: True
-      # loop: "{{ groups['ubuntu'] }}"
-      loop: "{{ groups['ubuntu'] | product([50030, 40040]) | list }}"
+      loop: "{{ groups['centos'] }}"
 
     - name: Terminate listener
       shell: |
           echo "terminate" | nc {{ item.0 }} {{ item.1 }}
-      loop: "{{ groups['ubuntu'] | product([50030, 40040]) | list }}"
+      loop: "{{ groups['centos'] | product([50030, 40040]) | list }}"
       ignore_errors: True
       delegate_to: localhost
       run_once: True
