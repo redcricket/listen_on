@@ -1,6 +1,86 @@
 # listen_on
 
+
 This module will listen on a specified port on a specified remote system to allow for firewall and security group testings.
+
+## Chat with James (Dive into Ansible) instructor.
+
+```
+RC
+Russell
+0 upvotes
+22 hours ago
+Hi James, 
+
+I must be doing something wrong here:
+
+pip freeze shows I have installed ansible and daemonize.
+
+
+
+(venv) ansible@ubuntu-c:~/listen_on$ pip freeze | grep daemon
+daemonize==2.5.0
+(venv) ansible@ubuntu-c:~/listen_on$ pip freeze | grep daemon
+daemonize==2.5.0
+(venv) ansible@ubuntu-c:~/listen_on$ which ansible-playbook
+/home/ansible/listen_on/venv/bin/ansible-playbook
+ 
+Here I run my playbook ....
+ 
+(venv) ansible@ubuntu-c:~/listen_on$ cd TEST_LAB_FILES/
+(venv) ansible@ubuntu-c:~/listen_on/TEST_LAB_FILES$ ansible-playbook -i hosts -l centos listen_on_playbook_ubuntu.yml 
+ 
+PLAY [all] 
+ 
+**************************************************************************************************************************
+ 
+TASK [Gathering Facts] **************************************************************************************************************
+ok: [centos3]
+ok: [centos2]
+ok: [centos1]
+ 
+TASK [Terminate listener] ***********************************************************************************************************
+...ignoring
+ 
+TASK [Test listen_on module port 50030] *********************************************************************************************
+fatal: [centos1 -> ubuntu3]: FAILED! => {"changed": false, "module_stderr": "unix_listener: cannot bind to path /home/ansible/.ansible/cp/b86a8a16f1.hDbLZzMXaJcHYUmw: Invalid argument\r\nControlSocket /home/ansible/.ansible/cp/b86a8a16f1.hDbLZzMXaJcHYUmw already exists, disabling multiplexing\r\nConnection to ubuntu3 closed.\r\n", "module_stdout": "\r\nTraceback (most recent call last):\r\n  File \"/home/ansible/.ansible/tmp/ansible-tmp-1648007518.8253736-14425-133966129228399/AnsiballZ_listen_on.py\", line 107, in <module>\r\n    _ansiballz_main()\r\n  File \"/home/ansible/.ansible/tmp/ansible-tmp-1648007518.8253736-14425-133966129228399/AnsiballZ_listen_on.py\", line 99, in _ansiballz_main\r\n    invoke_module(zipped_mod, temp_path, ANSIBALLZ_PARAMS)\r\n  File \"/home/ansible/.ansible/tmp/ansible-tmp-1648007518.8253736-14425-133966129228399/AnsiballZ_listen_on.py\", line 47, in invoke_module\r\n    runpy.run_module(mod_name='ansible.modules.listen_on', init_globals=dict(_module_fqn='ansible.modules.listen_on', _modlib_path=modlib_path),\r\n  File \"/usr/lib/python3.8/runpy.py\", line 207, in run_module\r\n    return _run_module_code(code, init_globals, run_name, mod_spec)\r\n  File \"/usr/lib/python3.8/runpy.py\", line 97, in _run_module_code\r\n    _run_code(code, mod_globals, init_globals,\r\n  File \"/usr/lib/python3.8/runpy.py\", line 87, in _run_code\r\n    exec(code, run_globals)\r\n  File \"/tmp/ansible_listen_on_payload_i5ofp39x/ansible_listen_on_payload.zip/ansible/modules/listen_on.py\", line 19, in <module>\r\nModuleNotFoundError: No module named 'daemonize'\r\n", "msg": "MODULE FAILURE\nSee stdout/stderr for the exact error", "rc": 1}
+ 
+NO MORE HOSTS LEFT ******************************************************************************************************************
+ 
+PLAY RECAP 
+**************************************************************************************************************************
+centos1                    : ok=2    changed=1    unreachable=0    failed=1    skipped=0    rescued=0    ignored=1   
+centos2                    : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+centos3                    : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ 
+(venv) ansible@ubuntu-c:~/listen_on/TEST_LAB_FILES$   
+ 
+ 
+ 
+ 
+ 
+So do I have to install daemonize on all my remote systems too?
+
+
+James — Instructor
+1 upvote
+14 minutes ago
+Hi Russell,
+
+This unfortunately is a quirk of running Ansible in a container. When I build the Ansible container image, I make a modification so that it uses a different path for shared memory rather than the default (which would be the overlay filesystem as part of Docker).
+
+You won’t have this problem when you run outside of the lab.
+
+See lines 29 and 30 from the container image source files for the commands you will want to run to patch your Ansible to work in the container -
+
+https://github.com/spurin/diveintoansible-images/blob/ansible/Dockerfile
+RC
+Russell
+0 upvotes
+7 minutes ago
+Hi James,  I was able to solve the issue with daemonize module.  Fortunately the daemonize module is on github and is not too complicated so I simply put the source code in my ansible module python file.
+```
+
 
 ## Testing so far
 
