@@ -40,6 +40,16 @@ class ListenOnPort:
         self.pid = "/tmp/listen_on_%s.pid" % port
         self.logger = logger
 
+    def client_connect(self):
+        HOST = "127.0.0.1"  # The server's hostname or IP address
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((HOST, self.port))
+            return True
+        except Exception as ex:
+            self.logger.info('line 49 error client_connect() ex=%s.' % ex)
+        return False
+
     def listen_on_port(self):
         try:
             running = True
@@ -93,6 +103,9 @@ def listen_on_port(port):
     print('{"changed": true, "msg": "listening on port %s."}' % port)
     sys.stdout.flush()
     l = ListenOnPort(port=port, logger=logger)
+    if l.client_connect():
+        print('{"changed": false, "warning": True, "msg": "Already listening on port %s."}' % port)
+        return
     d = Daemonize(app="demon_%s" % port, pid=l.pid, keep_fds=keep_fds, action=l.listen_on_port)
     d.start()
 
