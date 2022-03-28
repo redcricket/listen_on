@@ -14,42 +14,110 @@ ANSIBLE_METADATA = {
     'supported_by': 'community'
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
-module: my_test
+module: listen_on
 
-short_description: This is my test module
+short_description: This module will start a "listener" on the specified remote systems and port.
 
-# If this is part of a collection, you need to use semantic versioning,
-# i.e. the version is of the form "2.5.0" and not "2.4".
 version_added: "1.0.0"
 
-description: This is my longer description explaining my test module.
+description: This module will start a "listener" on the specified remote systems and port.  You can use this module
+to validate that firewall rules have been configured without have to deploy whatever server you are planning to
+run on your remote systems.
 
 options:
-    name:
-        description: This is the message to send to the test module.
+    listen_on_port:
+        description: This is the port you want the listener to listen to.
         required: true
-        type: str
-    new:
-        description:
-            - Control to demo if the result of this module is changed or not.
-            - Parameter description can be a list as well.
+        type: int
+    listen_on_timeout:
+        description: This is the number of seconds the listener should run for.  If not specified the listener will
+        run until you send the string "terminate" to it.  Example:  `echo "terminate" | nc ubuntu1 60060`
         required: false
-        type: bool
-# Specify this value according to your collection
-# in format of namespace.collection.doc_fragment_name
-extends_documentation_fragment:
-    - my_namespace.my_collection.my_doc_fragment_name
+        type: int
 
 author:
-    - Your Name (@yourGitHubHandle)
+    - Russell Cecala (@RedCricket)
 '''
 
-EXAMPLES = '''
+EXAMPLES = r'''
+
+Let's say you want to make sure that hosts in your 'foo' group can access hosts in your 'bar' group on a certain port,
+but the software that listens on the specified port on the 'bar' hosts is not running or installed yet.  Let's assume
+this software, when running, will listem on port 553.  One could write a playbook that looks like this:
+
+```
+---
+  hosts: all
+  tasks:
+    - name: Test listen_on module port 553
+      listen_on:
+        listen_on_timeout: 60
+        listen_on_port: 553
+      ignore_errors: True
+      delegate_to: "{{ item }}"
+      run_once: True
+      loop: "{{ groups['bar'] }}"
+
+    - name: Check port 553. 
+      wait_for:
+        host: "{{ item.0 }}"
+        port: "{{ item.1 }}"
+        timeout: 10
+      ignore_errors: True
+      loop: "{{ groups['bar'] | product([553]) | list }}"
+```
+
+One would execute the playbook like so;
+
+```
+ansible-playbook -i your_inventory -l foo example_playbook.yml
+```
+
+Note in the example tasks above, "delegate_to" and "run_once" are used.  This is because the "Test listen_on module port 
+553" task's  goal is to start a "listener" on all of the systems in the 'bar' group of the inventory.  Also note since 
+`list_on_timeout` was set to 60 the listener that get started on the 'bar' hosts will exit after 60 seconds.  
+
+Below is an example playbook that does not use `listen_on_timeout`, but instead "terminates" the listeners when it is
+done with them.
+
+```
+---
+  hosts: all
+  tasks:
+    - name: Test listen_on module port 553
+      listen_on:
+        listen_on_port: 553
+      ignore_errors: True
+      delegate_to: "{{ item }}"
+      run_once: True
+      loop: "{{ groups['bar'] }}"
+
+    - name: Check port 553. 
+      wait_for:
+        host: "{{ item.0 }}"
+        port: "{{ item.1 }}"
+        timeout: 10
+      ignore_errors: True
+      loop: "{{ groups['bar'] | product([553]) | list }}"
+      
+    - name: Terminate listener
+      shell: |
+          echo "terminate" | nc {{ item.0 }} {{ item.1 }}
+      loop: "{{ groups['bar'] | product([553]) | list }}"
+      ignore_errors: True
+      delegate_to: localhost
+      run_once: True
+```
+
+The "Terminate listener" sends the string "terminate" to the remote listener and when the remote listener receives the
+"terminate" string it terminates.
+
 '''
 
 RETURN = '''
+None
 '''
 
 
