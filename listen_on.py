@@ -7,15 +7,6 @@ ANSIBLE_METADATA = {
 }
 
 DOCUMENTATION = '''
-failed: [ubuntu1 -> ubuntu3] (item=ubuntu3) => {
-    "ansible_loop_var": "item", 
-    "changed": false, 
-    "item": "ubuntu3", 
-    "module_stderr": "Shared connection to ubuntu3 closed.\r\n", 
-    "module_stdout": "
-{\"changed\": true, \"msg\": \"listening on port 60060.\"}
-Unable to lock on the pidfile.
-{\"msg\": \"New-style module did not handle its own exit\", \"failed\": true}\r\n", "msg": "MODULE FAILURE\nSee stdout/stderr for the exact error", "rc": 1}
 '''
 
 EXAMPLES = '''
@@ -32,22 +23,29 @@ import logging
 import select
 import socket
 import sys
+import time
 
 class ListenOnPort:
 
-    def __init__(self, port, logger):
+    def __init__(self, port, logger, timeout=None):
         self.port = port
         self.pid = "/tmp/listen_on_%s.pid" % port
         self.logger = logger
+        self.timeout = None
+        if timeout:
+            try:
+                self.timeout = time.time() + int(timeout)
+            except Exception as ex:
+                print('error %s' % ex )
 
     def client_connect(self):
-        HOST = "127.0.0.1"  # The server's hostname or IP address
+        HOST = "127.0.0.1"
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((HOST, self.port))
             return True
         except Exception as ex:
-            self.logger.info('line 49 error client_connect() ex=%s.' % ex)
+            self.logger.info('Error client_connect() ex=%s.' % ex)
         return False
 
     def listen_on_port(self):
@@ -63,6 +61,11 @@ class ListenOnPort:
             self.logger.info('listening on port %s' % self.port)
             read_list = [server_socket]
             while running:
+                if self.timeout:
+                    if self.timeout < time.time():
+                        self.logger.info('Timeout %s current time %s.  Closing socket.' % (self.timeout, time.time()))
+                        running = False
+
                 try:
                     readable, writable, errored = select.select(read_list, [], [], 0.0)
                     for s in readable:
@@ -76,19 +79,19 @@ class ListenOnPort:
                                     self.logger.info("terminating.")
                                     running = False
                             except Exception as ex:
-                                self.logger.info('line 69 error s.recv() ex=%s.' % ex)
+                                self.logger.info('Error s.recv() ex=%s.' % ex)
                             finally:
                                 self.logger.info("closing socket.")
                                 s.close()
                                 read_list.remove(s)
                 except Exception as ex:
-                    self.logger.info('line 75 Inside while True. error ex=%s.' % ex)
+                    self.logger.info('Inside while True. error ex=%s.' % ex)
                     raise ex
         except Exception as ex:
-            self.logger.info('line 78 error ex=%s' % ex)
+            self.logger.info('Error ex=%s' % ex)
             raise ex
 
-def listen_on_port(port):
+def listen_on_port(port, timeout=None):
     # format = "%(asctime)s: %(message)s"
     # logging.basicConfig(format=format, level=logging.INFO, filename='listen_on.log', datefmt="%H:%M:%S")
     logger = logging.getLogger(__name__)
@@ -98,19 +101,14 @@ def listen_on_port(port):
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
     keep_fds = [fh.stream.fileno()]
-
-    # print('{"changed": true, "msg": "listening on port %s."}' % port, flush=True)
+    l = ListenOnPort(port=port, logger=logger, timeout=timeout)
+    if l.client_connect():
+        print('{"changed": false, "msg": "Already listening on port %s."}' % port)
+        return
     print('{"changed": true, "msg": "listening on port %s."}' % port)
     sys.stdout.flush()
-    l = ListenOnPort(port=port, logger=logger)
-    if l.client_connect():
-        print('{"changed": false, "warning": True, "msg": "Already listening on port %s."}' % port)
-        return
     d = Daemonize(app="demon_%s" % port, pid=l.pid, keep_fds=keep_fds, action=l.listen_on_port)
     d.start()
-
-
-
 
 def run_module():
     # define the available arguments/parameters that a user can pass to
@@ -148,9 +146,12 @@ def run_module():
     # part where your module will do what it needs to do)
     if module.params.get('listen_on_timeout'):
         # print('got a timeout', flush=True)
-        socket.setdefaulttimeout(module.params.get('listen_on_timeout'))
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.submit(listen_on_port,module.params.get('listen_on_port'))
+        # socket.setdefaulttimeout(module.params.get('listen_on_timeout'))
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.submit(listen_on_port,module.params.get('listen_on_port'), module.params.get('listen_on_timeout'))
+    else:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.submit(listen_on_port,module.params.get('listen_on_port'))
 
     # use whatever logic you need to determine whether or not this module
     # made any modifications to your target

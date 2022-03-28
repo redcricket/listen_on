@@ -23,6 +23,7 @@
       listen_on:
         listen_on_timeout: 30
         listen_on_port: 50030
+      ignore_errors: True
       delegate_to: "{{ item }}"
       run_once: True
       loop: "{{ groups['ubuntu'] }}"
