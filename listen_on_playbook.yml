@@ -21,7 +21,7 @@
 
     - name: Test listen_on module port 50030
       listen_on:
-        listen_on_timeout: 30
+        listen_on_timeout: 60
         listen_on_port: 50030
       ignore_errors: True
       delegate_to: "{{ item }}"
@@ -30,7 +30,7 @@
 
     - name: Test listen_on module port 40040
       listen_on:
-        listen_on_timeout: 30
+        listen_on_timeout: 60
         listen_on_port: 40040
       delegate_to: "{{ item }}"
       run_once: True
