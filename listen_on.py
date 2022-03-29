@@ -199,13 +199,18 @@ def listen_on_port(port, timeout=None):
     logger.addHandler(fh)
     keep_fds = [fh.stream.fileno()]
     l_on_p = ListenOnPort(port=port, logger=logger, timeout=timeout)
+    msg = '{"changed": true, "msg": "listening on port %s."}' % port
+    run_demon = True
     if l_on_p.client_connect():
-        print('{"changed": false, "msg": "Already listening on port %s."}' % port)
-        return
-    print('{"changed": true, "msg": "listening on port %s."}' % port)
+        # print('{"changed": false, "msg": "Already listening on port %s."}' % port)
+        msg = '{"changed": false, "msg": "Already listening on port %s."}' % port
+        run_demon = False
+        # sys.stdout.flush()
+    print(msg)
     sys.stdout.flush()
-    d = Daemonize(app="demon_%s" % port, pid=l_on_p.pid, keep_fds=keep_fds, action=l_on_p.listen_on_port)
-    d.start()
+    if run_demon:
+        d = Daemonize(app="demon_%s" % port, pid=l_on_p.pid, keep_fds=keep_fds, action=l_on_p.listen_on_port)
+        d.start()
 
 
 def run_module():
