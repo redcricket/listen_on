@@ -4,6 +4,30 @@
 
 see https://docs.ansible.com/ansible/latest/community/contributing_maintained_collections.html
 
+see https://docs.ansible.com/ansible/latest/dev_guide/developing_modules.html
+
+summary:
+
+If your use case isn’t covered by an existing module, an action plugin, or a role, and you don’t need to create multiple modules, then you’re ready to start developing a new module. Choose from the topics below for next steps:
+
+I want to get started on a new module.
+
+I want to review tips and conventions for developing good modules.
+
+I want to write a Windows module.
+
+I want an overview of Ansible’s architecture.
+
+I want to document my module.
+
+I want to contribute my module to an existing Ansible collection.
+
+I want to add unit and integration tests to my module.
+
+I want to add Python 3 support to my module.
+
+I want to write multiple modules.
+
 
 
 This module will listen on a specified port on a specified remote system to allow for firewall and security group testings.
